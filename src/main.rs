@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+#![allow(unused_imports)]
 #![feature(proc_macro_hygiene, decl_macro)]
 
 #[macro_use]
@@ -5,17 +7,19 @@ extern crate rocket;
 #[macro_use]
 extern crate rocket_contrib;
 
+mod settings;
+
+use rocket::fairing::AdHoc;
 use rocket::http::RawStr;
 use rocket::response::NamedFile;
+use rocket::State;
 use rocket_contrib::json::Json;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::{self, DirEntry};
 use std::io;
 use std::path::Path;
 use std::path::PathBuf;
-
-const ROOTDIR: &'static str = "/mnt/bigbox/images/comics/";
 
 fn path_to_title(s: &str) -> String {
     let mut s = s.replace("/", ": ").replace("_", " ");
@@ -48,15 +52,15 @@ struct FolderMap {
 }
 
 impl FolderMap {
-    fn new(path: &Path, depth: usize) -> FolderMap {
+    fn new(path: &Path, image_root: &str, depth: usize) -> FolderMap {
         let mut fmap = FolderMap {
             map: HashMap::new(),
         };
-        fmap.populate(path.to_string_lossy().to_string(), depth);
+        fmap.populate(path.to_string_lossy().to_string(), image_root, depth);
         return fmap;
     }
 
-    fn populate(&mut self, path: String, depth: usize) {
+    fn populate(&mut self, path: String, image_root: &str, depth: usize) {
         let mut folder = Folder {
             path: path.to_owned(),
             title: "".to_owned(),
@@ -64,13 +68,13 @@ impl FolderMap {
             pages: Vec::new(),
             subfolders: Vec::new(),
         };
-        let abs_path = Path::new(ROOTDIR).join(&path).canonicalize();
+        let abs_path = Path::new(image_root).join(&path).canonicalize();
         if abs_path.is_err() {
             return;
         }
         let abs_path = abs_path.unwrap();
-        // Don't escape ROOTDIR:
-        if !abs_path.starts_with(ROOTDIR) {
+        // Don't escape image_root (rocket path should already enforce this).
+        if !abs_path.starts_with(&image_root) {
             return;
         }
         if !abs_path.is_dir() {
@@ -100,7 +104,7 @@ impl FolderMap {
                         .subfolders
                         .push(entry.file_name().to_str().unwrap().to_owned());
                     if depth > 0 {
-                        self.populate(subpath.to_owned(), depth - 1);
+                        self.populate(subpath.to_owned(), image_root, depth - 1);
                     }
                 }
                 if entry_path.is_file() {
@@ -139,6 +143,16 @@ impl FolderMap {
 } // impl FolderMap
 
 //
+// Configuration variables:
+//
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Config {
+    static_root: String,
+    image_root: String,
+}
+
+//
 // Response Handlers
 //
 
@@ -147,22 +161,34 @@ fn hello() -> &'static str {
     "Hello, world!"
 }
 
+#[get("/static/<path..>")]
+async fn static_content(path: PathBuf, config: State<'_, Config>) -> Option<NamedFile> {
+    NamedFile::open(Path::new(&config.static_root).join(path))
+        .await
+        .ok()
+}
+
 #[get("/image/<path..>")]
-async fn image(path: PathBuf) -> Option<NamedFile> {
-    NamedFile::open(Path::new(ROOTDIR).join(path)).await.ok()
+async fn image(path: PathBuf, config: State<'_, Config>) -> Option<NamedFile> {
+    NamedFile::open(Path::new(&config.image_root).join(path))
+        .await
+        .ok()
 }
 
 // for example: http://localhost:8000/folder/Appleseed?depth=2
 #[get("/folder/<path..>?<depth>")]
-fn folder(path: PathBuf, depth: usize) -> Json<FolderMap> {
+fn folder(path: PathBuf, depth: usize, config: State<'_, Config>) -> Json<FolderMap> {
     // since <path..> can't be empty, we remove any ROOT segment we find.
     let fixed_path = path.strip_prefix("/").unwrap_or(&path);
     let fixed_path = fixed_path.strip_prefix("ROOT").unwrap_or(fixed_path);
-    let fmap = FolderMap::new(fixed_path, depth);
+    let fmap = FolderMap::new(fixed_path, &config.image_root, depth);
     return Json(fmap);
 }
 
 #[launch]
 fn rocket() -> rocket::Rocket {
-    rocket::ignite().mount("/", routes![hello, image, folder])
+    let mut r = rocket::ignite()
+        .mount("/", routes![hello, image, folder])
+        .attach(AdHoc::config::<Config>());
+    r
 }

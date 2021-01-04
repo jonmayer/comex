@@ -1,0 +1,3 @@
+[default]
+image_root = "/mnt/bigbox/images/comics/"
+static_root = "./static"
