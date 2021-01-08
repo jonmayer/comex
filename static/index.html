@@ -274,7 +274,7 @@ document.onkeypress = function(e) {
     console.log(ZOOM);
     refresh_page();
   } else if (e.which == KEYCODE_SPACE) {
-    e.preventDefault();
+    e.preventDefault();  /* prevent default scrolling behavior. */
     if (is_at_bottom()) {
       set_current_page(CURRENT_PAGE + 1);
     } else {
