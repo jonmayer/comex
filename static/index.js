@@ -67,12 +67,12 @@ function pagenail(index, src, title) {
   return `
     <figure
    onclick="viewpage(${index})"
+   id="pagenail_${index}"
     >
     <img loading=lazy
    src="${src}"
    alt="${title}"
    width="${THUMBWIDTH}"
-   id="pagenail_${index}"
     />
     </figure>
     `;
@@ -92,7 +92,16 @@ function view(src) {
 }
 
 function set_current_page(index) {
+  var oldthumb = document.getElementById(`pagenail_${CURRENT_PAGE}`);
+  if (oldthumb != null) {
+	  oldthumb.classList.remove('page_highlight');
+  }
+  var newthumb = document.getElementById(`pagenail_${index}`);
+  if (newthumb != null) {
+	  newthumb.classList.add('page_highlight');
+  }
   CURRENT_PAGE = index;
+  document.getElementById(`pagenail_${index}`).scrollIntoView();
   refresh_page();
 }
 

@@ -47,6 +47,10 @@ figure {
   background-color: white;
   text-align: center;
 }
+figure.page_highlight {
+  padding: 2px;
+  border: 3px #ff0000 solid;
+}
 figurecaption {
   background-color: white;
   width="100%"
