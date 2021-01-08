@@ -12,6 +12,7 @@ mod settings;
 use rocket::fairing::AdHoc;
 use rocket::http::RawStr;
 use rocket::response::NamedFile;
+use rocket::response::Redirect;
 use rocket::State;
 use rocket_contrib::json::Json;
 use serde::{Deserialize, Serialize};
@@ -157,12 +158,12 @@ struct Config {
 //
 
 #[get("/")]
-fn hello() -> &'static str {
-    "Hello, world!"
+fn hello() -> Redirect {
+    Redirect::to("/index.html")
 }
 
-#[get("/static/<path..>")]
-async fn static_content(path: PathBuf, config: State<'_, Config>) -> Option<NamedFile> {
+#[get("/<path>")]
+async fn static_content(path: String, config: State<'_, Config>) -> Option<NamedFile> {
     NamedFile::open(Path::new(&config.static_root).join(path))
         .await
         .ok()
@@ -188,7 +189,7 @@ fn folder(path: PathBuf, depth: usize, config: State<'_, Config>) -> Json<Folder
 #[launch]
 fn rocket() -> rocket::Rocket {
     let mut r = rocket::ignite()
-        .mount("/", routes![hello, image, folder])
+        .mount("/", routes![hello, image, static_content, folder])
         .attach(AdHoc::config::<Config>());
     r
 }
