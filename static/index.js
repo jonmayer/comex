@@ -122,14 +122,19 @@ function refresh_page() {
   var src = to_image_url(metadata.pages[CURRENT_PAGE]);
   var next = CURRENT_PAGE + 1;
   var prev = CURRENT_PAGE - 1;
-  document.getElementById('main').innerHTML = `
+  var elem = document.getElementById('main');
+  elem.innerHTML = `
     <img loading=lazy
-   src="${src}"
-   width="${ZOOM}%"
-   onclick="viewpage(${next})"
+     src="${src}"
+     width="${ZOOM}%"
+     onclick="viewpage(${next})"
     />
     `;
-  document.getElementById("main").focus();
+  if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+  }
+  elem.scrollTo(0,0);
+  elem.focus();
 }
 
 function to_image_url(path) {
