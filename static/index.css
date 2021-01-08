@@ -23,7 +23,7 @@ div.navbar {
 div.path {
   background-color: #cccccc;
   color: black;
-  font-family: `Quicksand`, sans-serif;
+  font-family: Quicksand, sans-serif;
   font-size: 20px;
   padding: 2px;
   text-align: left;
@@ -31,6 +31,26 @@ div.path {
   padding: 2px;
   border: 1px #000000 solid;
   box-shadow: 3px 3px #555555;
+}
+#overlay {
+  position: fixed;
+  display: none;
+  width: 80%;
+  height: 80%;
+  top: 10%;
+  left: 10%;
+  right: 10%;
+  bottom: 10%;
+  background-color: rgba(255, 255, 255, 0.9);
+  z-index: 2;
+  cursor: pointer;
+  padding: 10%;
+  font-family: Quicksand, sans-serif;
+  font-size: 18px;
+}
+div.help {
+  font-family: Quicksand, sans-serif;
+  font-size: 20px;
 }
 main {
   flex: 1 0 auto;  /* fill all available space */

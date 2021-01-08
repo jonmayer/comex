@@ -189,12 +189,6 @@ function render_navbar() {
 function render_image() {
 }
 
-const KEYCODE_MINUS = 45;  /* zoom out */
-const KEYCODE_EQUALS = 61;  /* zoom in */
-const KEYCODE_SPACE = 32;  /* scroll */
-const KEYCODE_N = 110;  /* next page */
-const KEYCODE_P = 112;  /* previous page */
-
 function is_at_bottom() {
   var div = document.getElementById("main");
   return (div.offsetHeight + div.scrollTop + 1 >= div.scrollHeight);
@@ -204,6 +198,21 @@ function scroll_page() {
   var div = document.getElementById("main");
   div.scrollBy(0, div.clientHeight);
 }
+
+function help_on() {
+  document.getElementById('overlay').style.display = "block";
+}
+
+function help_off() {
+  document.getElementById('overlay').style.display = "none";
+}
+
+const KEYCODE_MINUS = 45;  /* zoom out */
+const KEYCODE_EQUALS = 61;  /* zoom in */
+const KEYCODE_SPACE = 32;  /* scroll */
+const KEYCODE_N = 110;  /* next page */
+const KEYCODE_P = 112;  /* previous page */
+const KEYCODE_QUESTION = 63;
 
 document.onkeypress = function(e) {
   if (e.which == KEYCODE_MINUS) {
@@ -225,6 +234,8 @@ document.onkeypress = function(e) {
     set_current_page(CURRENT_PAGE + 1);
   } else if (e.which == KEYCODE_P) {
     set_current_page(CURRENT_PAGE - 1);
+  } else if (e.which == KEYCODE_QUESTION) {
+    help_on();
   } else {
     console.log("unknown key: ", e.which);
   }
