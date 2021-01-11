@@ -267,6 +267,7 @@ const KEYCODE_EQUALS = 61;  /* zoom in */
 const KEYCODE_SPACE = 32;  /* scroll */
 const KEYCODE_N = 110;  /* next page */
 const KEYCODE_P = 112;  /* previous page */
+const KEYCODE_U = 117;  /* go up one folder level */
 const KEYCODE_QUESTION = 63;
 
 document.onkeypress = function(e) {
@@ -289,6 +290,10 @@ document.onkeypress = function(e) {
     set_current_page(CURRENT_PAGE + 1);
   } else if (e.which == KEYCODE_P) {
     set_current_page(CURRENT_PAGE - 1);
+  } else if (e.which == KEYCODE_U) {
+    if (LOCATION.length > 1) {
+      nav_to(LOCATION.length - 2);
+    }
   } else if (e.which == KEYCODE_QUESTION) {
     help_on();
   } else {
