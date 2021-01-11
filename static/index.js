@@ -7,34 +7,41 @@ var IMAGES = [];
 var ZOOM=100;
 var CURRENT_PAGE=0;
 
-const THUMBWIDTH="220px";
+const THUMBWIDTH="90pt";
 
-function reload_folder_data() {
-  // Let's use the new Fetch API to grab our json data.
-  fetch('/folder/ROOT/?depth=9')
+// get_folder returns a promise
+function get_folder(path, depth = 0) {
+  // TODO: trim old data from FOLDERS.
+  if (path in FOLDERS) { return Promise.resolve(); }
+
+  if (path == "") { path = "ROOT/"; }
+  console.log(`Fetching /folder/${path}?depth=${depth}`);
+  return fetch(`/folder/${path}?depth=${depth}`)
     .then(
       function(response) {
-        if (response.status !== 200) {
-          console.log('Looks like there was a problem. Status Code: ' +
-            response.status);
-          return;
-        }
-
-        console.log(response.headers.get('Content-Type'));
-        console.log(response.headers.get('Date'));
+        console.log(`Fetched /folder/${path}`);
         console.log(response.status);
         console.log(response.statusText);
         console.log(response.type);
         console.log(response.url);
-
+        if (response.status !== 200) {
+          console.log('Looks like there was a problem. Status Code: ' +
+            response.status);
+          return Promise.reject("Status Code " + response.status);
+        }
         // Examine the text in the response
-        response.json().then(function(data) {
-          FOLDERS = data["map"];
+        return response.json().then(function(data) {
+          FOLDERS = Object.assign({}, FOLDERS, data["map"]);
           console.log(FOLDERS);
-          render();
+          return Promise.resolve();
         });
       }
-    )
+    );
+}
+
+function reload_folder_data() {
+  // Let's use the new Fetch API to grab our json data.
+  get_folder("", 0).then(render)
     .catch(function(err) {
       console.log('Fetch Error :-S', err);
     });
@@ -46,20 +53,37 @@ function render() {
 }
 
 // thumbnail for subfolders:
-function thumbnail(src, title, path) {
+function dummy_thumbnail(index) {
   return `
-    <figure
-   onclick="change_dir('${path}')"
-   onmouseover="view('${src}')"
-    >
-    <img loading=lazy
-   src="${src}"
-   alt="${title}"
-   width="${THUMBWIDTH}"
-    />
-    <figurecaption>${title}</figurecaption>
+    <figure id="thumbnail_${index}">
+    Loading...
     </figure>
     `;
+}
+
+function update_thumbnail_resolved(index, path) {
+  if (!(path in FOLDERS)) {
+    console.log(`Missing "${path}" in FOLDERS`);
+    return;
+  }
+  var kid_metadata = FOLDERS[path];
+  var src = to_image_url(kid_metadata.cover);
+  var title = kid_metadata.title;
+  var fig = document.getElementById(`thumbnail_${index}`);
+  fig.onclick = function() {change_dir(path)};
+  fig.onmouseover = function() {view(src)};
+  fig.innerHTML = `
+    <img loading=lazy
+     src="${src}"
+     alt="${title}"
+     width="${THUMBWIDTH}"
+    />
+    <figurecaption>${title}</figurecaption>
+    `;
+  if (CURRENT_PAGE === index) {
+    viewpage(index);
+  }
+  return;
 }
 
 // thumbnail for pages:
@@ -80,6 +104,7 @@ function pagenail(index, src, title) {
 
 function change_dir(path) {
   LOCATION.push(path);
+  CURRENT_PAGE = 0;  // always start at first page.
   render();
 }
 
@@ -107,15 +132,33 @@ function set_current_page(index) {
 
 function viewpage(index) {
   var path = LOCATION.slice(-1)[0];
-  var metadata = FOLDERS[path];
-  if (index >= metadata.pages.length) {
-    index = metadata.pages.length - 1;
+  if (path in FOLDERS) {
+    viewpage_resolved(index);
+  } else {
+    get_folder(path).then(function () { viewpage_resolved(index); });
   }
-  if (index < 0) { index = 0; }
-  set_current_page(index);
+}
+
+function viewpage_resolved(index) {
+    var path = LOCATION.slice(-1)[0];
+    var metadata = FOLDERS[path];
+    if (index >= metadata.pages.length) {
+      index = metadata.pages.length - 1;
+    }
+    if (index < 0) { index = 0; }
+    set_current_page(index);
 }
 
 function refresh_page() {
+  var path = LOCATION.slice(-1)[0];
+  if (path in FOLDERS) {
+    refresh_page_resolved();
+  } else {
+    get_folder(path).then(refresh_page_resolved());
+  }
+}
+
+function refresh_page_resolved() {
   // TODO: handle no pages condition.
   var path = LOCATION.slice(-1)[0];
   var metadata = FOLDERS[path];
@@ -138,7 +181,7 @@ function refresh_page() {
 }
 
 function to_image_url(path) {
-  return `/image/${path}`;
+  return encodeURI(`/image/${path}`);
 }
 
 function nav_to(index) {
@@ -148,8 +191,17 @@ function nav_to(index) {
 }
 
 function render_navbar() {
+  var path = LOCATION.slice(-1)[0];
+  if (path in FOLDERS) {
+    render_navbar_resolved();
+  } else {
+    get_folder(path).then(render_navbar_resolved());
+  }
+}
+
+function render_navbar_resolved() {
   var root = LOCATION.slice(-1)[0];
-  var inner = `<div class="navbar">\n`;
+  var inner = `<div class="navbar">\n  <div class="pathdiv">\n`;
   for (index in LOCATION) {
     var loc = LOCATION[index];
     var title = "COMEX";
@@ -160,6 +212,7 @@ function render_navbar() {
       <span style="font-family: Quicksand, sans-serif">${title}</span>
         </div>\n`;
   }
+  inner += `  </div><!-- pathdiv -->\n  <div class="thumbnails">\n`;
   var pages = FOLDERS[root].pages;
   for (index in pages) {
     var page = pages[index];
@@ -170,20 +223,22 @@ function render_navbar() {
   }
 
   var kids = FOLDERS[root].subfolders;
-  for (kid of kids) {
-    var path = [root, kid].join("/");
+  for (kid_index in kids) {
+    inner = inner.concat(dummy_thumbnail(kid_index));
+  }
+  inner += "</div></div>\n";
+  document.getElementById("header").innerHTML = inner;
+  document.getElementById("main").focus();
+  for (let kid_index in kids) {
+    let kid = kids[kid_index];
+    let path = [root, kid].join("/");
     if (root === "") {
       path = kid;
     }
-    kid_metadata = FOLDERS[path];
-    inner = inner.concat(thumbnail(
-      to_image_url(kid_metadata.cover),
-      kid_metadata.title,
-      path));
+    get_folder(path).then(function() {
+      update_thumbnail_resolved(kid_index, path);
+    });
   }
-  inner = inner.concat("</div>\n");
-  document.getElementById("header").innerHTML = inner;
-  document.getElementById("main").focus();
 }
 
 function render_image() {

@@ -21,6 +21,7 @@ use std::fs::{self, DirEntry};
 use std::io;
 use std::path::Path;
 use std::path::PathBuf;
+use std::sync::RwLock;
 
 fn path_to_title(s: &str) -> String {
     let mut s = s.replace("/", ": ").replace("_", " ");
@@ -38,7 +39,7 @@ fn path_to_title(s: &str) -> String {
     return s;
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 struct Folder {
     path: String,
     title: String,
@@ -59,6 +60,33 @@ impl FolderMap {
         };
         fmap.populate(path.to_string_lossy().to_string(), image_root, depth);
         return fmap;
+    }
+
+    fn get_submap(&self, path: &Path, depth: usize) -> FolderMap {
+        let mut fmap = FolderMap {
+            map: HashMap::new(),
+        };
+        fmap.recursive_copy_from(self, &path.to_string_lossy().to_string(), depth);
+        return fmap;
+    }
+
+    fn recursive_copy_from(&mut self, other: &FolderMap, path: &str, depth: usize) {
+        let other_folder = other.map.get(path);
+        if other_folder.is_none() {
+            return;
+        }
+        let other_folder = other_folder.unwrap();
+        self.map.insert(path.to_owned(), other_folder.clone());
+        if depth > 0 {
+            for subdir in &other_folder.subfolders {
+                let mut subpath: String = String::from(path);
+                if path != "" {
+                    subpath.push_str("/");
+                }
+                subpath.push_str(subdir);
+                self.recursive_copy_from(other, &subpath, depth - 1);
+            }
+        }
     }
 
     fn populate(&mut self, path: String, image_root: &str, depth: usize) {
@@ -176,20 +204,39 @@ async fn image(path: PathBuf, config: State<'_, Config>) -> Option<NamedFile> {
         .ok()
 }
 
+fn update_folder_map(fmap_lock: RwLock<FolderMap>, config: &Config) {
+    let new_fmap = FolderMap::new(Path::new(""), &config.image_root, 9);
+    {
+        let mut fmap_ptr = fmap_lock.write().unwrap();
+        *fmap_ptr = new_fmap;
+    }
+}
+
 // for example: http://localhost:8000/folder/Appleseed?depth=2
 #[get("/folder/<path..>?<depth>")]
-fn folder(path: PathBuf, depth: usize, config: State<'_, Config>) -> Json<FolderMap> {
+fn folder(path: PathBuf, depth: usize, fmap_lock: State<'_, RwLock<FolderMap>>) -> Json<FolderMap> {
     // since <path..> can't be empty, we remove any ROOT segment we find.
     let fixed_path = path.strip_prefix("/").unwrap_or(&path);
     let fixed_path = fixed_path.strip_prefix("ROOT").unwrap_or(fixed_path);
-    let fmap = FolderMap::new(fixed_path, &config.image_root, depth);
-    return Json(fmap);
+
+    let submap: FolderMap;
+    {
+        let fmap_ptr = fmap_lock.read().unwrap();
+        submap = fmap_ptr.get_submap(fixed_path, depth);
+    }
+
+    return Json(submap);
 }
 
 #[launch]
 fn rocket() -> rocket::Rocket {
-    let mut r = rocket::ignite()
+    let mut rocket = rocket::ignite()
         .mount("/", routes![hello, image, static_content, folder])
         .attach(AdHoc::config::<Config>());
-    r
+
+    let figment = rocket.figment();
+    let config: Config = figment.extract().expect("config");
+    let mut fmap: FolderMap = FolderMap::new(Path::new(""), &config.image_root, 9);
+    rocket = rocket.manage(RwLock::new(fmap));
+    rocket
 }
