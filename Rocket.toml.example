@@ -1,0 +1,3 @@
+[default]
+image_root = "/mnt/server/comics"
+static_root = "./static"
