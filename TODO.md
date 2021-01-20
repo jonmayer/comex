@@ -1,4 +1,5 @@
 TO DO:
+* Drop privileges to a comex-specific uid.
 * cbz support
 * cbr support
 * Move the directory structure to an Arc in a managed state.

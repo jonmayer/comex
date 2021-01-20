@@ -199,9 +199,9 @@ function render_navbar() {
   }
 }
 
-function render_navbar_resolved() {
+function render_menubar_resolved() {
   var root = LOCATION.slice(-1)[0];
-  var inner = `<div class="navbar">\n  <div class="pathdiv">\n`;
+  var inner = "";
   for (index in LOCATION) {
     var loc = LOCATION[index];
     var title = "COMEX";
@@ -209,10 +209,16 @@ function render_navbar_resolved() {
       title = "&rarr; " + loc.split("/").slice(-1)[0];
     }
     inner += `<div class="path" onclick="nav_to(${index})">
-      <span style="font-family: Quicksand, sans-serif">${title}</span>
-        </div>\n`;
+      ${title}
+    </div><!-- ${title} -->\n`;
   }
-  inner += `  </div><!-- pathdiv -->\n  <div class="thumbnails">\n`;
+  document.getElementById("menubar").innerHTML = inner;
+}
+
+function render_navbar_resolved() {
+  render_menubar_resolved();
+  var root = LOCATION.slice(-1)[0];
+  var inner = `<div class="navbar">\n  <div class="thumbnails">\n`;
   var pages = FOLDERS[root].pages;
   for (index in pages) {
     var page = pages[index];
@@ -227,7 +233,7 @@ function render_navbar_resolved() {
     inner = inner.concat(dummy_thumbnail(kid_index));
   }
   inner += "</div></div>\n";
-  document.getElementById("header").innerHTML = inner;
+  document.getElementById("thumbs").innerHTML = inner;
   document.getElementById("main").focus();
   for (let kid_index in kids) {
     let kid = kids[kid_index];
@@ -273,11 +279,11 @@ const KEYCODE_QUESTION = 63;
 document.onkeypress = function(e) {
   if (e.which == KEYCODE_MINUS) {
     ZOOM = ZOOM * 8 / 10;
-    console.log(ZOOM);
+    console.log("zoom: ", ZOOM);
     refresh_page();
   } else if (e.which == KEYCODE_EQUALS) {
     ZOOM *= 1.25;
-    console.log(ZOOM);
+    console.log("zoom: ", ZOOM);
     refresh_page();
   } else if (e.which == KEYCODE_SPACE) {
     e.preventDefault();  /* prevent default scrolling behavior. */

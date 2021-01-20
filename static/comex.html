@@ -3,29 +3,39 @@
 <html lang="en">
   <head>
     <meta charset = "UTF-8"/>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1"
+          />
     <title>Comex</title>
     <link rel = "stylesheet"
-       type = "text/css"
-       href = "comex.css" />
+          type = "text/css"
+          href = "comex.css" />
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/icon?family=Material+Icons">
   </head>
   <body>
-    <header id="header">
+    <div id="menubar">
       Loading...
-    </header>
-    <main id="main">
-    </main>
+    </div>
+    <div id="thumbs_and_main">
+      <div id="thumbs">
+        Loading...
+      </div>
+      <main id="main">
+      </main>
+    </div><!-- header_and_main -->
     <script src="comex.js"></script>
     <div id="overlay" onclick="help_off()">
       <div class="help">
-      <p>COMEX Help</p>
-      <table border="0">
-        <tr><td>?</td><td>This help screen.</td></tr>
-        <tr><td>n</td><td>Advance to next page.</td></tr>
-        <tr><td>p</td><td>Go to previous page.</td></tr>
-        <tr><td>spacebar</td><td>Scroll down, then advance to next page.</td></tr>
-        <tr><td>-</td><td>Zoom out 25%.</td></tr>
-        <tr><td>+ or =</td><td>Zoom in 25%.</td></tr>
-      </table>
+        <p>COMEX Help</p>
+        <table border="0">
+          <tr><td>?</td><td>This help screen.</td></tr>
+          <tr><td>n</td><td>Advance to next page.</td></tr>
+          <tr><td>p</td><td>Go to previous page.</td></tr>
+          <tr><td>spacebar</td><td>Scroll down, then advance to next page.</td></tr>
+          <tr><td>-</td><td>Zoom out 25%.</td></tr>
+          <tr><td>+ or =</td><td>Zoom in 25%.</td></tr>
+        </table>
       </div>
     </div>
   </body>
