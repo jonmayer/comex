@@ -119,11 +119,11 @@ function view(src) {
 function set_current_page(index) {
   var oldthumb = document.getElementById(`pagenail_${CURRENT_PAGE}`);
   if (oldthumb != null) {
-	  oldthumb.classList.remove('page_highlight');
+    oldthumb.classList.remove('page_highlight');
   }
   var newthumb = document.getElementById(`pagenail_${index}`);
   if (newthumb != null) {
-	  newthumb.classList.add('page_highlight');
+    newthumb.classList.add('page_highlight');
   }
   CURRENT_PAGE = index;
   document.getElementById(`pagenail_${index}`).scrollIntoView();
@@ -140,13 +140,13 @@ function viewpage(index) {
 }
 
 function viewpage_resolved(index) {
-    var path = LOCATION.slice(-1)[0];
-    var metadata = FOLDERS[path];
-    if (index >= metadata.pages.length) {
-      index = metadata.pages.length - 1;
-    }
-    if (index < 0) { index = 0; }
-    set_current_page(index);
+  var path = LOCATION.slice(-1)[0];
+  var metadata = FOLDERS[path];
+  if (index >= metadata.pages.length) {
+    index = metadata.pages.length - 1;
+  }
+  if (index < 0) { index = 0; }
+  set_current_page(index);
 }
 
 function refresh_page() {
@@ -208,10 +208,27 @@ function render_menubar_resolved() {
     if (loc !== "") {
       title = "&rarr; " + loc.split("/").slice(-1)[0];
     }
-    inner += `<div class="path" onclick="nav_to(${index})">
+    inner += `<button class="btn path" onclick="nav_to(${index})">
       ${title}
-    </div><!-- ${title} -->\n`;
+    </button><!-- ${title} -->\n`;
   }
+  inner += `
+    &nbsp;
+    <button class="btn zoom zoom_out"
+            style="margin-left:auto" 
+            onclick="zoom_out();">
+    <span class="material-icons"> zoom_out </span>
+    </button>
+    <button class="btn" style="width: 5em">
+    ${ZOOM}%
+    </button>
+    <button class="btn zoom zoom_in" onclick="zoom_in();">
+    <span class="material-icons"> zoom_in </span>
+    </button>
+    <button class="btn fullscreen" onclick="openFullscreen();">
+    <span class="material-icons"> settings_overscan </span>
+    </button>
+    `;
   document.getElementById("menubar").innerHTML = inner;
 }
 
@@ -268,6 +285,46 @@ function help_off() {
   document.getElementById('overlay').style.display = "none";
 }
 
+function zoom_out() {
+  ZOOM = ZOOM * 8 / 10;
+  render_navbar();
+  refresh_page();
+}
+
+function zoom_in() {
+  ZOOM *= 1.25;
+  render_navbar();
+  refresh_page();
+}
+
+var elem = document.documentElement;
+
+/* View in fullscreen */
+function openFullscreen() {
+  var elem = document.documentElement;
+  if (elem.requestFullscreen) {
+    elem.requestFullscreen();
+  } else if (elem.webkitRequestFullscreen) { /* Safari */
+    elem.webkitRequestFullscreen();
+  } else if (elem.msRequestFullscreen) { /* IE11 */
+    elem.msRequestFullscreen();
+  } else {
+    alert("Full screen not supported on this browser.");
+  }
+}
+
+/* Close fullscreen */
+function closeFullscreen() {
+  if (document.exitFullscreen) {
+    document.exitFullscreen();
+  } else if (document.webkitExitFullscreen) { /* Safari */
+    document.webkitExitFullscreen();
+  } else if (document.msExitFullscreen) { /* IE11 */
+    document.msExitFullscreen();
+  }
+}
+
+
 const KEYCODE_MINUS = 45;  /* zoom out */
 const KEYCODE_EQUALS = 61;  /* zoom in */
 const KEYCODE_SPACE = 32;  /* scroll */
@@ -278,13 +335,9 @@ const KEYCODE_QUESTION = 63;
 
 document.onkeypress = function(e) {
   if (e.which == KEYCODE_MINUS) {
-    ZOOM = ZOOM * 8 / 10;
-    console.log("zoom: ", ZOOM);
-    refresh_page();
+    zoom_out();
   } else if (e.which == KEYCODE_EQUALS) {
-    ZOOM *= 1.25;
-    console.log("zoom: ", ZOOM);
-    refresh_page();
+    zoom_in();
   } else if (e.which == KEYCODE_SPACE) {
     e.preventDefault();  /* prevent default scrolling behavior. */
     if (is_at_bottom()) {
