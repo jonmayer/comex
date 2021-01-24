@@ -215,17 +215,32 @@ function render_menubar_resolved() {
   inner += `
     &nbsp;
     <button class="btn zoom zoom_out"
+            title="Zoom Out"
             style="margin-left:auto" 
             onclick="zoom_out();">
     <span class="material-icons"> zoom_out </span>
     </button>
+
     <button class="btn" style="width: 5em">
     ${ZOOM}%
     </button>
-    <button class="btn zoom zoom_in" onclick="zoom_in();">
+
+    <button class="btn zoom zoom_in"
+            title="Zoom In"
+            onclick="zoom_in();">
     <span class="material-icons"> zoom_in </span>
     </button>
-    <button class="btn fullscreen" onclick="openFullscreen();">
+
+    <button class="btn thumbnails icon-flipped"
+            id="toggle-thumbnails-btn"
+            title="Toggle Thumbnail Bar"
+            onclick="toggleThumbnails();">
+    <span class="material-icons"> view_sidebar </span>
+    </button>
+
+    <button class="btn fullscreen" 
+            title="Open Fullscreen"
+            onclick="openFullscreen();">
     <span class="material-icons"> settings_overscan </span>
     </button>
     `;
@@ -322,6 +337,12 @@ function closeFullscreen() {
   } else if (document.msExitFullscreen) { /* IE11 */
     document.msExitFullscreen();
   }
+}
+
+function toggleThumbnails() {
+  document.getElementById("thumbs").classList.toggle("is-collapsed");
+  document.getElementById("main").classList.toggle("is-expanded");
+  document.getElementById("toggle-thumbnails-btn").classList.toggle("lit");
 }
 
 

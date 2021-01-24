@@ -24,16 +24,24 @@ body {
   height: calc(100% - 50px);
 }
 #thumbs {
-  flex: 0 0 100pt;  /* fixed width header bar */
+  flex: 0 0 100pt;
   background-color: blue;
   overflow: auto;
   height: 100%;
+  transition: all .3s ease-out;
+}
+#thumbs.is-collapsed {
+  transform: translateX(-100%);
 } 
 #main {
   flex: 1 0 auto;  /* fill all available space */
   background-color: red;
   overflow: auto;
   height: 100%;
+  transition: all .3s ease-out;
+}
+#main.is-expanded {
+  margin-left: -100pt;
 }
 div.navbar {
   display: flex;
@@ -69,6 +77,16 @@ div.path {
 .btn:hover {
   background-color: green;
   color: white;
+}
+.btn.lit {
+  color: white;
+  background-color: blue;
+}
+.icon-flipped {
+   transform: scaleX(-1);
+   -moz-transform: scaleX(-1);
+   -webkit-transform: scaleX(-1);
+   -ms-transform: scaleX(-1);
 }
 #overlay {
   position: fixed;
